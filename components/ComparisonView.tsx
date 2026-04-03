@@ -200,34 +200,33 @@ export default function ComparisonView({ result, onReset }: ComparisonViewProps)
         <ScoreGauge score={reportB.healthScore} rationale={reportB.healthScoreRationale} />
       </motion.div>
 
-      {/* Red flags & positives — side by side */}
+      {/* Red flags & positives — one card per category, items tagged by year */}
       {[
-        { icon: AlertTriangle, color: "text-red-500", items: "redFlags", title: "Red Flags" } as const,
-        { icon: TrendingUp, color: "text-emerald-500", items: "positives", title: "Positives" } as const,
-      ].map(({ icon: Icon, color, items, title }) => (
-        <motion.div key={items} variants={sectionVariants} className="grid grid-cols-2 gap-4">
-          {[reportA, reportB].map((r, ri) => (
-            <div key={ri} className="rounded-2xl border border-border bg-card p-5">
-              <div className="mb-3 flex items-center gap-2">
-                <Icon className={`h-4 w-4 ${color}`} />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {title} · {r.reportYear}
-                </span>
-              </div>
-              <ul className="space-y-2">
-                {r[items].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                    <span
-                      className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
-                        items === "redFlags" ? "bg-red-500" : "bg-emerald-500"
-                      }`}
-                    />
+        { icon: AlertTriangle, dotColor: "bg-red-500",     iconColor: "text-red-500",     items: "redFlags"  as const, title: "Red Flags & Risks" },
+        { icon: TrendingUp,    dotColor: "bg-emerald-500", iconColor: "text-emerald-500", items: "positives" as const, title: "Positives & Catalysts" },
+      ].map(({ icon: Icon, dotColor, iconColor, items, title }) => (
+        <motion.div key={items} variants={sectionVariants} className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Icon className={`h-4 w-4 ${iconColor}`} />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {title}
+            </span>
+          </div>
+          <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+            {[reportA, reportB].map((r) =>
+              r[items].map((item, i) => (
+                <div key={`${r.reportYear}-${i}`} className="flex items-start gap-2.5 text-sm">
+                  <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dotColor}`} />
+                  <span className="text-foreground">
+                    <span className="mr-1.5 rounded px-1 py-0.5 text-[10px] font-bold text-muted-foreground" style={{ backgroundColor: "hsl(var(--muted))" }}>
+                      {r.reportYear}
+                    </span>
                     {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         </motion.div>
       ))}
     </motion.div>
