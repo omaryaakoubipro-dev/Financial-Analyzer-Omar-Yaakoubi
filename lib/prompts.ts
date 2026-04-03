@@ -12,8 +12,24 @@ When given a financial document, you must respond with a single, valid JSON obje
  * @param text - Extracted text from the PDF
  */
 export function buildAnalysisPrompt(text: string): string {
-  // Truncate to ~80k chars to stay within token limits while preserving most content
-  const truncated = text.length > 80000 ? text.slice(0, 80000) + "\n\n[Document truncated for length]" : text;
+  // 10-K reports are often 300+ pages. The financial statements are always
+  // in the SECOND HALF of the document (Part II), while Part I (first half)
+  // is business description and risk factors.
+  // Strategy: take the first 20k chars (company info) + the last 80k chars
+  // (financial statements, MD&A) to stay within token limits while ensuring
+  // Claude sees the actual numbers.
+  const MAX_TOTAL = 100000;
+  const HEAD = 20000;
+  const TAIL = MAX_TOTAL - HEAD;
+
+  let excerpt: string;
+  if (text.length <= MAX_TOTAL) {
+    excerpt = text;
+  } else {
+    const head = text.slice(0, HEAD);
+    const tail = text.slice(-TAIL);
+    excerpt = head + "\n\n[... middle section omitted for length ...]\n\n" + tail;
+  }
 
   return `Analyze the following financial report and return a JSON object with exactly this structure. For any metric you cannot find, use null. All monetary values should be numbers (in millions USD or the original currency, specify the unit). Percentages should be numbers (e.g. 12.5 for 12.5%).
 
@@ -87,15 +103,20 @@ REQUIRED JSON STRUCTURE:
 }
 
 DOCUMENT TEXT:
-${truncated}`;
+${excerpt}`;
 }
 
 /**
  * Builds the user prompt for two-report comparison.
  */
 export function buildComparisonPrompt(textA: string, textB: string): string {
-  const truncA = textA.length > 40000 ? textA.slice(0, 40000) + "\n[truncated]" : textA;
-  const truncB = textB.length > 40000 ? textB.slice(0, 40000) + "\n[truncated]" : textB;
+  // Same head+tail strategy per document: 10k head + 40k tail = 50k per doc
+  const excerpt = (text: string) => {
+    if (text.length <= 50000) return text;
+    return text.slice(0, 10000) + "\n\n[... middle omitted ...]\n\n" + text.slice(-40000);
+  };
+  const truncA = excerpt(textA);
+  const truncB = excerpt(textB);
 
   return `You are comparing two annual reports from the same company (or two different companies). Analyze both and return a single JSON object with this structure:
 
