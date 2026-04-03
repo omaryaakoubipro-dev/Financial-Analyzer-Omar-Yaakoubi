@@ -12,24 +12,13 @@ When given a financial document, you must respond with a single, valid JSON obje
  * @param text - Extracted text from the PDF
  */
 export function buildAnalysisPrompt(text: string): string {
-  // 10-K reports are often 300+ pages. The financial statements are always
-  // in the SECOND HALF of the document (Part II), while Part I (first half)
-  // is business description and risk factors.
-  // Strategy: take the first 20k chars (company info) + the last 80k chars
-  // (financial statements, MD&A) to stay within token limits while ensuring
-  // Claude sees the actual numbers.
-  const MAX_TOTAL = 100000;
-  const HEAD = 20000;
-  const TAIL = MAX_TOTAL - HEAD;
-
-  let excerpt: string;
-  if (text.length <= MAX_TOTAL) {
-    excerpt = text;
-  } else {
-    const head = text.slice(0, HEAD);
-    const tail = text.slice(-TAIL);
-    excerpt = head + "\n\n[... middle section omitted for length ...]\n\n" + tail;
-  }
+  // claude-sonnet-4-20250514 has a 200k token context window (~800k chars).
+  // Most 10-K/annual reports are well under that, so we send the full text.
+  // Only truncate if the document is truly enormous (>700k chars).
+  const MAX = 700000;
+  const content = text.length > MAX
+    ? text.slice(0, 350000) + "\n\n[... middle section omitted ...]\n\n" + text.slice(-350000)
+    : text;
 
   return `Analyze the following financial report and return a JSON object with exactly this structure. For any metric you cannot find, use null. All monetary values should be numbers (in millions USD or the original currency, specify the unit). Percentages should be numbers (e.g. 12.5 for 12.5%).
 
@@ -103,20 +92,22 @@ REQUIRED JSON STRUCTURE:
 }
 
 DOCUMENT TEXT:
-${excerpt}`;
+${content}`;
 }
 
 /**
  * Builds the user prompt for two-report comparison.
  */
 export function buildComparisonPrompt(textA: string, textB: string): string {
-  // Same head+tail strategy per document: 10k head + 40k tail = 50k per doc
-  const excerpt = (text: string) => {
-    if (text.length <= 50000) return text;
-    return text.slice(0, 10000) + "\n\n[... middle omitted ...]\n\n" + text.slice(-40000);
+  // For comparison we have two documents — cap each at 300k chars (600k total)
+  // which is safely within the 200k token context window.
+  const cap = (text: string) => {
+    const MAX = 300000;
+    if (text.length <= MAX) return text;
+    return text.slice(0, 150000) + "\n\n[... middle omitted ...]\n\n" + text.slice(-150000);
   };
-  const truncA = excerpt(textA);
-  const truncB = excerpt(textB);
+  const truncA = cap(textA);
+  const truncB = cap(textB);
 
   return `You are comparing two annual reports from the same company (or two different companies). Analyze both and return a single JSON object with this structure:
 
