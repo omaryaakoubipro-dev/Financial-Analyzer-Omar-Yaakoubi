@@ -9,45 +9,42 @@ interface ScoreGaugeProps {
 
 function getScoreColor(score: number): string {
   if (score >= 7.5) return "#10b981"; // emerald
-  if (score >= 5) return "#f59e0b";  // amber
-  return "#ef4444";                   // red
+  if (score >= 5)   return "#f59e0b"; // amber
+  return "#ef4444";                    // red
 }
 
 function getScoreLabel(score: number): string {
   if (score >= 8.5) return "Excellent";
-  if (score >= 7) return "Strong";
+  if (score >= 7)   return "Strong";
   if (score >= 5.5) return "Fair";
-  if (score >= 4) return "Weak";
+  if (score >= 4)   return "Weak";
   return "Critical";
 }
 
 export default function ScoreGauge({ score, rationale }: ScoreGaugeProps) {
-  const clampedScore = Math.max(0, Math.min(10, score));
-  const color = getScoreColor(clampedScore);
-  const label = getScoreLabel(clampedScore);
+  const clamped = Math.max(0, Math.min(10, score));
+  const color   = getScoreColor(clamped);
+  const label   = getScoreLabel(clamped);
 
-  // SVG arc parameters
-  const radius = 52;
-  const cx = 70;
-  const cy = 70;
-  const startAngle = -210; // degrees from 3-o'clock (right)
-  const sweepDeg = 240;    // total arc span
+  // ── Semicircle gauge (left → top → right) ──────────────────────────────
+  // ViewBox: 200 × 120  |  centre: (100, 100)  |  radius: 80
+  // Arc spans 180° from 180° (left) to 0° (right), going counter-clockwise
+  // via the top. We draw it as a standard SVG arc so it's always correct.
+  const R  = 80;
+  const cx = 100;
+  const cy = 100;
 
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  // Full semicircle circumference (half of 2πr)
+  const arcLen   = Math.PI * R;              // ≈ 251.3
+  const filled   = (clamped / 10) * arcLen;  // how much to fill
+  const dashArr  = `${arcLen} ${arcLen}`;    // total dash pattern
+  // offset starts at full arcLen (empty) and animates to arcLen - filled
+  const dashOffset = arcLen - filled;
 
-  const arcPath = (start: number, sweep: number) => {
-    const s = toRad(start);
-    const e = toRad(start + sweep);
-    const x1 = cx + radius * Math.cos(s);
-    const y1 = cy + radius * Math.sin(s);
-    const x2 = cx + radius * Math.cos(e);
-    const y2 = cy + radius * Math.sin(e);
-    const largeArc = sweep > 180 ? 1 : 0;
-    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
-  };
-
-  const totalCircumference = (2 * Math.PI * radius * sweepDeg) / 360;
-  const filledLength = (clampedScore / 10) * totalCircumference;
+  // The semicircle path: M left-point  A rx ry 0 large-arc sweep  right-point
+  // large-arc=1 because it's > 180°? No, exactly 180° → large-arc=0 is fine
+  // but browsers differ, so we split into two 90° arcs to be safe.
+  const pathD = `M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx} ${cy - R} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`;
 
   return (
     <motion.div
@@ -60,63 +57,62 @@ export default function ScoreGauge({ score, rationale }: ScoreGaugeProps) {
         Financial Health Score
       </p>
 
-      <div className="relative mt-4">
-        <svg width="140" height="100" viewBox="0 0 140 100">
+      {/* SVG gauge */}
+      <div className="relative mt-3">
+        <svg width="160" height="90" viewBox="20 20 160 90" overflow="visible">
           {/* Background track */}
           <path
-            d={arcPath(startAngle, sweepDeg)}
+            d={pathD}
             fill="none"
             stroke="currentColor"
-            strokeWidth="8"
+            strokeWidth="10"
             strokeLinecap="round"
             className="text-muted/40"
           />
-          {/* Filled arc */}
+          {/* Filled arc — animated */}
           <motion.path
-            d={arcPath(startAngle, sweepDeg)}
+            d={pathD}
             fill="none"
             stroke={color}
-            strokeWidth="8"
+            strokeWidth="10"
             strokeLinecap="round"
-            strokeDasharray={`${totalCircumference}`}
-            initial={{ strokeDashoffset: totalCircumference }}
-            animate={{ strokeDashoffset: totalCircumference - filledLength }}
+            strokeDasharray={dashArr}
+            initial={{ strokeDashoffset: arcLen }}
+            animate={{ strokeDashoffset: dashOffset }}
             transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
-            style={{ filter: `drop-shadow(0 0 6px ${color}60)` }}
+            style={{ filter: `drop-shadow(0 0 5px ${color}80)` }}
           />
         </svg>
 
-        {/* Score number overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pb-2">
-          <motion.span
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8, duration: 0.4 }}
-            className="text-4xl font-black leading-none tracking-tight"
-            style={{ color }}
-          >
-            {clampedScore.toFixed(1)}
-          </motion.span>
-          <span className="mt-0.5 text-[11px] font-medium text-muted-foreground">
-            / 10
-          </span>
+        {/* Score number — centred below the arc apex */}
+        <div className="absolute inset-0 flex items-end justify-center pb-1">
+          <div className="flex flex-col items-center leading-none">
+            <motion.span
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.8, duration: 0.35 }}
+              className="text-3xl font-black"
+              style={{ color }}
+            >
+              {clamped.toFixed(1)}
+            </motion.span>
+            <span className="text-[11px] text-muted-foreground">/ 10</span>
+          </div>
         </div>
       </div>
 
+      {/* Label badge */}
       <motion.span
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="mt-1 rounded-full px-3 py-1 text-xs font-semibold"
-        style={{
-          backgroundColor: `${color}20`,
-          color,
-        }}
+        className="mt-2 rounded-full px-3 py-1 text-xs font-semibold"
+        style={{ backgroundColor: `${color}20`, color }}
       >
         {label}
       </motion.span>
 
-      <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
+      <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
         {rationale}
       </p>
     </motion.div>
