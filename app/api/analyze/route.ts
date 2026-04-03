@@ -3,12 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT, buildAnalysisPrompt } from "@/lib/prompts";
 import { AnalysisResult } from "@/lib/types";
 
-// Use the internal pdf-parse module directly to avoid a known issue where
-// the top-level require() tries to load test fixture files that don't exist
-// in Vercel's serverless environment, causing a crash before any PDF is read.
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+  const pdfParse = require("pdf-parse");
   const data = await pdfParse(buffer);
   return data.text;
 }

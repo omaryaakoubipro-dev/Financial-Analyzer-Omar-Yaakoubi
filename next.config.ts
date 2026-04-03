@@ -7,12 +7,6 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "50mb",
     },
   },
-  // Suppress the pdf-parse canvas peer-dep warning (Turbopack compatible)
-  turbopack: {
-    resolveAlias: {
-      canvas: "./empty-module.ts",
-    },
-  },
 };
 
 export default nextConfig;
