@@ -4,8 +4,10 @@ import { SYSTEM_PROMPT, buildComparisonPrompt } from "@/lib/prompts";
 import { ComparisonResult } from "@/lib/types";
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  // Use the internal module directly — pdf-parse's main index.js tries to
+  // read a test file on require() which crashes in Vercel's serverless env.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse");
+  const pdfParse = require("pdf-parse/lib/pdf-parse.js");
   const data = await pdfParse(buffer);
   return data.text;
 }
