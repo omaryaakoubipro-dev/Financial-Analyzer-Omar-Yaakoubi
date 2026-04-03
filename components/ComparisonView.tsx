@@ -173,26 +173,22 @@ export default function ComparisonView({ result, onReset }: ComparisonViewProps)
               }`}
             >
               <span className="font-medium text-foreground">{label}</span>
-              <span className="text-center">
+              <div className="flex items-center justify-center gap-2">
                 <span className="font-semibold text-foreground">
                   {mA ? formatMetricValue(mA) : "N/A"}
                 </span>
                 {mA?.yoyChange !== undefined && mA?.yoyChange !== null && (
-                  <span className="ml-2">
-                    <DeltaChip yoyChange={mA.yoyChange} />
-                  </span>
+                  <DeltaChip yoyChange={mA.yoyChange} />
                 )}
-              </span>
-              <span className="text-center">
+              </div>
+              <div className="flex items-center justify-center gap-2">
                 <span className="font-semibold text-foreground">
                   {mB ? formatMetricValue(mB) : "N/A"}
                 </span>
                 {mB?.yoyChange !== undefined && mB?.yoyChange !== null && (
-                  <span className="ml-2">
-                    <DeltaChip yoyChange={mB.yoyChange} />
-                  </span>
+                  <DeltaChip yoyChange={mB.yoyChange} />
                 )}
-              </span>
+              </div>
             </motion.div>
           );
         })}
