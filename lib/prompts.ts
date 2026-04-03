@@ -110,15 +110,56 @@ export function buildComparisonPrompt(textA: string, textB: string): string {
   const truncA = cap(textA);
   const truncB = cap(textB);
 
-  return `You are comparing two annual reports from the same company (or two different companies). Analyze both and return a single JSON object with this structure:
+  return `You are comparing two annual reports. Extract financial metrics from EACH report independently and return a single JSON object.
 
+CRITICAL INSTRUCTIONS:
+- You MUST extract real numbers from the documents. Do NOT return null if a number exists anywhere in the text.
+- Search thoroughly: revenue/net sales, net income, operating income (use as EBITDA proxy if EBITDA not stated), cash and debt for net debt, free cash flow, margins.
+- For each metric: value is a plain number in millions (e.g. 391035 for $391B), unit is "USD millions", yoyChange is the % change vs prior year if stated.
+- Only use null if the number is truly absent from the document after thorough search.
+
+Return exactly this JSON (no markdown, no extra text):
 {
-  "reportA": { /* same structure as single-report analysis — this is the OLDER or first report */ },
-  "reportB": { /* same structure as single-report analysis — this is the NEWER or second report */ },
-  "summary": "string — 3 to 5 sentences comparing the two reports, highlighting the most important changes, improvements, or deteriorations"
+  "reportA": {
+    "companyName": "string",
+    "reportYear": "string e.g. FY2024",
+    "executiveSummary": "string 3-5 sentences",
+    "metrics": {
+      "revenue":       { "label": "Revenue",        "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "ebitda":        { "label": "EBITDA",          "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "netIncome":     { "label": "Net Income",      "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "netDebt":       { "label": "Net Debt",        "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "freeCashFlow":  { "label": "Free Cash Flow",  "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "ebitdaMargin":  { "label": "EBITDA Margin",   "value": number|null, "unit": "%",            "yoyChange": number|null, "yoyLabel": "string|null" },
+      "netMargin":     { "label": "Net Margin",      "value": number|null, "unit": "%",            "yoyChange": number|null, "yoyLabel": "string|null" },
+      "revenueGrowth": { "label": "Revenue Growth",  "value": number|null, "unit": "%",            "yoyChange": null,        "yoyLabel": null }
+    },
+    "redFlags": ["3-7 risks"],
+    "positives": ["3-7 positives"],
+    "healthScore": number 0-10,
+    "healthScoreRationale": "string"
+  },
+  "reportB": {
+    "companyName": "string",
+    "reportYear": "string e.g. FY2025",
+    "executiveSummary": "string 3-5 sentences",
+    "metrics": {
+      "revenue":       { "label": "Revenue",        "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "ebitda":        { "label": "EBITDA",          "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "netIncome":     { "label": "Net Income",      "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "netDebt":       { "label": "Net Debt",        "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "freeCashFlow":  { "label": "Free Cash Flow",  "value": number|null, "unit": "USD millions", "yoyChange": number|null, "yoyLabel": "string|null" },
+      "ebitdaMargin":  { "label": "EBITDA Margin",   "value": number|null, "unit": "%",            "yoyChange": number|null, "yoyLabel": "string|null" },
+      "netMargin":     { "label": "Net Margin",      "value": number|null, "unit": "%",            "yoyChange": number|null, "yoyLabel": "string|null" },
+      "revenueGrowth": { "label": "Revenue Growth",  "value": number|null, "unit": "%",            "yoyChange": null,        "yoyLabel": null }
+    },
+    "redFlags": ["3-7 risks"],
+    "positives": ["3-7 positives"],
+    "healthScore": number 0-10,
+    "healthScoreRationale": "string"
+  },
+  "summary": "3-5 sentences comparing both reports"
 }
-
-Each reportA and reportB must follow the same schema as a single-report analysis (companyName, reportYear, executiveSummary, metrics, redFlags, positives, healthScore, healthScoreRationale).
 
 REPORT A (first / older):
 ${truncA}
