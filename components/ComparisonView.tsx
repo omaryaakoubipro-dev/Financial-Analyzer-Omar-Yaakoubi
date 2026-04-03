@@ -70,16 +70,16 @@ function DeltaChip({ yoyChange }: { yoyChange: number | null | undefined }) {
 export default function ComparisonView({ result, onReset }: ComparisonViewProps) {
   const { reportA, reportB, summary } = result;
 
-  const METRIC_KEYS = [
-    "revenue",
-    "ebitda",
-    "netIncome",
-    "netDebt",
-    "freeCashFlow",
-    "ebitdaMargin",
-    "netMargin",
-    "revenueGrowth",
-  ] as const;
+  const METRIC_KEYS: { key: keyof typeof reportA.metrics; label: string }[] = [
+    { key: "revenue",      label: "Revenue" },
+    { key: "ebitda",       label: "EBITDA" },
+    { key: "netIncome",    label: "Net Income" },
+    { key: "netDebt",      label: "Net Debt" },
+    { key: "freeCashFlow", label: "Free Cash Flow" },
+    { key: "ebitdaMargin", label: "EBITDA Margin" },
+    { key: "netMargin",    label: "Net Margin" },
+    { key: "revenueGrowth",label: "Revenue Growth" },
+  ];
 
   return (
     <motion.div
@@ -159,7 +159,7 @@ export default function ComparisonView({ result, onReset }: ComparisonViewProps)
           <span className="text-center">{reportA.reportYear}</span>
           <span className="text-center">{reportB.reportYear}</span>
         </div>
-        {METRIC_KEYS.map((key, i) => {
+        {METRIC_KEYS.map(({ key, label }, i) => {
           const mA = reportA.metrics[key];
           const mB = reportB.metrics[key];
           return (
@@ -172,7 +172,7 @@ export default function ComparisonView({ result, onReset }: ComparisonViewProps)
                 i % 2 === 0 ? "bg-card" : "bg-muted/20"
               }`}
             >
-              <span className="font-medium text-foreground">{mA?.label}</span>
+              <span className="font-medium text-foreground">{label}</span>
               <span className="text-center">
                 <span className="font-semibold text-foreground">
                   {mA ? formatMetricValue(mA) : "N/A"}

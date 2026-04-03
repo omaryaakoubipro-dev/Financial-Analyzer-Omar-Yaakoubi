@@ -99,12 +99,13 @@ ${content}`;
  * Builds the user prompt for two-report comparison.
  */
 export function buildComparisonPrompt(textA: string, textB: string): string {
-  // For comparison we have two documents — cap each at 300k chars (600k total)
-  // which is safely within the 200k token context window.
+  // Two documents share the same 200k token window. Cap each at 150k chars
+  // (300k total ≈ 75k tokens each) leaving room for prompt + response.
+  // Use head+tail so financial statements are always included.
   const cap = (text: string) => {
-    const MAX = 300000;
+    const MAX = 150000;
     if (text.length <= MAX) return text;
-    return text.slice(0, 150000) + "\n\n[... middle omitted ...]\n\n" + text.slice(-150000);
+    return text.slice(0, 50000) + "\n\n[... middle omitted ...]\n\n" + text.slice(-100000);
   };
   const truncA = cap(textA);
   const truncB = cap(textB);
