@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/* ── Design tokens via @theme for Tailwind v4 ── */
+@theme {
+  --color-background: hsl(var(--bg));
+  --color-foreground: hsl(var(--fg));
+  --color-card: hsl(var(--card));
+  --color-border: hsl(var(--border));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-fg));
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ── Light mode ── */
+:root {
+  --bg: 0 0% 100%;
+  --fg: 222 20% 10%;
+  --card: 0 0% 100%;
+  --border: 220 13% 91%;
+  --muted: 220 14% 96%;
+  --muted-fg: 220 9% 46%;
+}
+
+/* ── Dark mode ── */
+.dark {
+  --bg: 222 28% 8%;
+  --fg: 220 20% 94%;
+  --card: 222 26% 11%;
+  --border: 222 20% 18%;
+  --muted: 222 22% 16%;
+  --muted-fg: 220 10% 56%;
+}
+
+/* ── Global resets ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: hsl(var(--bg));
+  color: hsl(var(--fg));
+  min-height: 100dvh;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ── Semantic helper classes used throughout components ── */
+.bg-background   { background-color: hsl(var(--bg)); }
+.bg-card         { background-color: hsl(var(--card)); }
+.bg-muted        { background-color: hsl(var(--muted)); }
+.text-foreground { color: hsl(var(--fg)); }
+.text-muted-foreground { color: hsl(var(--muted-fg)); }
+.border-border   { border-color: hsl(var(--border)); }
+
+/* Subtle dot-grid background for the hero area */
+.bg-dot-grid {
+  background-image: radial-gradient(
+    hsl(var(--border)) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+}
